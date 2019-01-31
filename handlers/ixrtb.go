@@ -61,41 +61,62 @@ func (hObj *HandlerObj) Adserving(w http.ResponseWriter, r *http.Request) {
 	data.Set("d", dspRequest.D)
 	data.Set("a", strconv.Itoa(dspRequest.A))
 
-	client := &http.Client{}
-	dspRequestBody, _ := http.NewRequest("POST", hObj.Config.Dspurl, strings.NewReader(data.Encode()))
-
-	dspRequestBody.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	dspRequestBody.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
-
-	hObj.Logger.Info("sending request to dsp: ", hObj.Config.Dspurl)
-	response, err := client.Do(dspRequestBody)
+	bid1, err := sendDSP(data, hObj.Config.DspUrlOne, hObj.Logger)
 	if err != nil {
-		hObj.Logger.Error("Error at sending request to DSP: ", err)
+		hObj.Logger.Error("error", err)
 		HandleSuccess(&w, HeartBeatResponse{Okay: false}, hObj.Logger)
 		return
 	}
 
-	defer response.Body.Close()
-
-	body, err := ioutil.ReadAll(response.Body)
+	bid2, err := sendDSP(data, hObj.Config.DspUrlTwo, hObj.Logger)
 	if err != nil {
-		hObj.Logger.Error("Error at response body:", err)
+		hObj.Logger.Error("error", err)
 		HandleSuccess(&w, HeartBeatResponse{Okay: false}, hObj.Logger)
 		return
 	}
 
-	var bid Bid
-	err = json.Unmarshal(body, &bid)
-	if err != nil {
-		hObj.Logger.Error("Unable to unmarshal the json body:", err)
-		HandleSuccess(&w, HeartBeatResponse{Okay: false}, hObj.Logger)
+	if bid1.BidPrice > bid2.BidPrice {
+		HandleSuccess(&w, bid1, hObj.Logger)
 		return
 	}
 
-	HandleSuccess(&w, bid, hObj.Logger)
+	HandleSuccess(&w, bid2, hObj.Logger)
 }
 
 func (hObj *HandlerObj) Heartbeat(w http.ResponseWriter, r *http.Request) {
 	hObj.Logger.Info("/heartbeat request received")
 	HandleSuccess(&w, HeartBeatResponse{Okay: true}, hObj.Logger)
+}
+
+func sendDSP(data url.Values, dspUrl string, logger *logrus.Logger) (Bid, error) {
+	var bid Bid
+	client := &http.Client{}
+
+	dspRequestBody, _ := http.NewRequest("POST", dspUrl, strings.NewReader(data.Encode()))
+
+	dspRequestBody.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	dspRequestBody.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	logger.Info("sending request to dsp: ", dspUrl)
+	response, err := client.Do(dspRequestBody)
+
+	if err != nil {
+		logger.Error("Error at sending request to DSP: ", dspUrl)
+		return bid, err
+	}
+
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		logger.Error("Error at response body from DSP:", dspUrl)
+		return bid, err
+	}
+
+	err = json.Unmarshal(body, &bid)
+	if err != nil {
+		logger.Error("Unable to unmarshal the json body of DSP:", dspUrl)
+		return bid, err
+	}
+
+	return bid, nil
 }

@@ -5,8 +5,9 @@ import (
 )
 
 type Config struct {
-	Dspurl string `yaml:"dspurl"`
-	Port   int    `yaml:"port"`
+	DspUrlOne string `yaml:"dspurlOne"`
+	DspUrlTwo string `yaml:"dspurlTwo"`
+	Port      int    `yaml:"port"`
 }
 
 //Load configration based on path and filename
