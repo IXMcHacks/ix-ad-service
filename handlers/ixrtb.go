@@ -37,12 +37,21 @@ func RunAuction(w http.ResponseWriter, r *http.Request) {
 	// Parse the IXRTB GET request and put values into a DspRequest struct.
 	dspRequest, parseError := parseGETRequest(w, r)
 	if parseError != nil || dspRequest.Code != "yes" {
+		log.Printf("Error parsing GET request or invalid code, returning PSA.")
 		returnPSA(w)
 		return
 	}
 
-	// We call processAuction to get the topBid whose ad we will return to the browser.
-	topBid := processBids(dspRequest, dspURLs)
+	// We call processBids to get the topBid whose ad we will return to the browser.
+	topBid, processingError := processBids(dspRequest, dspURLs)
+	if processingError != nil {
+		log.Printf("Error processing bids, returning PSA.")
+		returnPSA(w)
+		return
+	}
+
+	// Log to keep track of all auction outcomes for billing/data purposes
+	log.Printf("Auction successful, returning highest bid: %v", topBid)
 
 	// Return the topBid in JSON format back to the webpage that sent the initial request.
 	ReturnJSONResponse(w, topBid)
@@ -75,22 +84,22 @@ var dspURLs = []string{
 }
 
 // Complete this method
-func processBids(dspRequest DspRequest, dsps []string) Bid {
+func processBids(dspRequest DspRequest, dsps []string) (Bid, error) {
 
 	// Your job is to populate the topBid object with the highest bid received
 	var topBid Bid
 
-	// Some key steps to guide you:
+	// Some key steps to guide you, for each DSP:
 
 	// 1. Get the bid of that DSP by calling:
 	// bid, err := getBidFromDSP(dspRequest, dsps[0]) for example
 
-	// 2. For each bid received, compare it to the highest bid and set the topBid accordingly.
+	// 2. Compare it to the highest bid and set the topBid accordingly.
 
 	// 3. HINT: can we find a way to send and receive all requests concurrently using goroutines
 	// and channels?
 
-	return topBid
+	return topBid, nil
 }
 
 // getBidFromDSP sends a bid request to a specific DSP, parses its response, an returns
