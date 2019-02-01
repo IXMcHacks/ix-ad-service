@@ -20,7 +20,8 @@ func main() {
 	// Use Log package to make print statements to standard output
 	log.Printf("Starting up ad-server listening on port: %v", port)
 
-	// 1. Register a HTTP Request Handler
+	// 1. Register a HTTP Request Handler. It compares incoming requests against a list of predefined URL
+	// paths, and calls the associated handler for the path whenever a match is found, in this case ixrtb
 	http.HandleFunc("/ixrtb", handlers.RunAuction)
 
 	// 2. Call Listen and Server and provide the ipaddress and port you want

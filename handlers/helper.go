@@ -12,12 +12,6 @@ import (
 	"github.com/gorilla/schema"
 )
 
-// HTTP Response Header Codes
-const (
-	httpOK                  = 200
-	httpInternalServerError = 500
-)
-
 // parseGETRequest is an example of how to read an incoming GET request and extract the
 // data in its url into a dedicated struct that can be used by other Go methods in the
 // project.
@@ -59,9 +53,6 @@ func sendPOSTRequest(dspRequest DspRequest, dspURL string) (*http.Response, erro
 	postBody.Set("d", dspRequest.D)
 	postBody.Set("a", strconv.Itoa(dspRequest.A))
 
-	// Instantiate a net/http client that can be used to make a http request to another server
-	client := &http.Client{}
-
 	// Build a new http request, which involves specifying the request type (POST), the request URL,
 	// and the data that will be included in the POST request's body.
 	dspRequestBody, _ := http.NewRequest("POST", dspURL, strings.NewReader(postBody.Encode()))
@@ -71,6 +62,10 @@ func sendPOSTRequest(dspRequest DspRequest, dspURL string) (*http.Response, erro
 	dspRequestBody.Header.Add("Content-Length", strconv.Itoa(len(postBody.Encode())))
 
 	// 2. Send the POST Request
+
+	// Instantiate a net/http client that can be used to make a http request to another server
+	client := &http.Client{}
+
 	log.Printf("Sending request to DSP at: %v", dspURL)
 
 	// Using the client that was initialized before, invoke the Do method and provide it the
@@ -84,7 +79,7 @@ func sendPOSTRequest(dspRequest DspRequest, dspURL string) (*http.Response, erro
 // that responded to the initial request.
 func parseJSONResponse(bid Bid, response *http.Response, dspURL string) (Bid, error) {
 
-	// Make sure to close the connection after this method completes (defer)
+	// Make sure to close the request readers and writers after this method completes (defer)
 	defer response.Body.Close()
 
 	// ioutil.ReadAll uses the response.Body reader to extract the data into a byte array (body).
@@ -117,7 +112,7 @@ func ReturnJSONResponse(w http.ResponseWriter, result interface{}) {
 	// is created.
 	marshalled, err := json.Marshal(result)
 	if err != nil {
-		w.WriteHeader(httpInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Internal Server Error"))
 		return
 	}
@@ -127,6 +122,6 @@ func ReturnJSONResponse(w http.ResponseWriter, result interface{}) {
 	// JSON object, which is how the response is returned.
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(httpOK)
+	w.WriteHeader(http.StatusOK)
 	w.Write(marshalled)
 }
