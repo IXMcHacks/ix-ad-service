@@ -12,6 +12,9 @@ const (
 	port = 8080
 )
 
+// The main method spins up a http server that listens for IXRTB ad-requests coming from a website.
+// Since we call ListenAndServer directly the program and all logs are printed to standard output on
+// the terminal.
 func main() {
 
 	// Use Log package to make print statements to standard output
@@ -21,11 +24,10 @@ func main() {
 	http.HandleFunc("/ixrtb", handlers.RunAuction)
 
 	// 2. Call Listen and Server and provide the ipaddress and port you want
-	// to reach the server on. Adding just the port automatically sets the server
+	// to reach the server on. Adding just the :port automatically sets the server
 	// listening on localhost, or 127.0.0.1
 	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
-
 	if err != nil {
-		log.Printf("Error starting up server:%", err)
+		log.Printf("Error starting up server:%v", err)
 	}
 }
