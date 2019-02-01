@@ -35,8 +35,8 @@ var fallbackPSAURL = "https://psanycsquad.podbean.com/mf/web/f9rrjh/maxresdefaul
 
 // dspURLs is the list of urls to send requests to DSPs
 var dspURLs = []string{
-	"http://127.0.0.1:9000/ixrtb",
-	"http://127.0.0.1:9002/ixrtb",
+	"http://10.65.111.204:8080/ixrtb",
+	"http://10.65.109.124:8080/ixrtb",
 }
 
 // RunAuction is the ad-serving handler. It receives an IXRTB GET request, parses the values in the
