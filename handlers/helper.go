@@ -2,18 +2,17 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
-
-	"github.com/sirupsen/logrus"
 )
 
-func HandleSuccess(w *http.ResponseWriter, result interface{}, logger *logrus.Logger) {
+func HandleSuccess(w *http.ResponseWriter, result interface{}) {
 	writer := *w
 
 	marshalled, err := json.Marshal(result)
 
 	if err != nil {
-		HandleError(w, 500, "Internal Server Error", "Error marshalling response JSON", err, logger)
+		HandleError(w, 500, "Internal Server Error", "Error marshalling response JSON", err)
 		return
 	}
 
@@ -23,15 +22,14 @@ func HandleSuccess(w *http.ResponseWriter, result interface{}, logger *logrus.Lo
 	writer.Write(marshalled)
 }
 
-func HandleError(w *http.ResponseWriter, code int, responseText string, logMessage string, err error, logger *logrus.Logger) {
+func HandleError(w *http.ResponseWriter, code int, responseText string, logMessage string, err error) {
 	errorMessage := ""
 	writer := *w
 
 	if err != nil {
 		errorMessage = err.Error()
 	}
-
-	logger.Error(logMessage, errorMessage)
+	log.Printf("An error occure:", errorMessage)
 	writer.WriteHeader(code)
 	writer.Write([]byte(responseText))
 }

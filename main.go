@@ -1,49 +1,31 @@
 package main
 
 import (
+	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 
-	"github.com/eftakhairul/ix-ad-service/handlers"
-	"github.com/eftakhairul/ix-ad-service/lib"
-	"github.com/sirupsen/logrus"
+	"ixmchacks/ix-ad-service/handlers"
+)
+
+const (
+	port = 8080
 )
 
 func main() {
-	var logger = logrus.New()
 
-	customFormatter := new(logrus.TextFormatter)
-	customFormatter.TimestampFormat = "2006-01-02 15:04:05"
-	customFormatter.FullTimestamp = true
-	logger.SetFormatter(customFormatter)
+	// Use Log package to make print statements to standard output
+	log.Printf("Starting up ad-server listening on port: %v", port)
 
-	var currentDir, err = filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		logger.Fatal("something went wrong. Error: ", err)
-		return
-	}
+	// 1. Register a HTTP Request Handler
+	http.HandleFunc("/ixrtb", handlers.RunAuction)
 
-	var conf *lib.Config
-	conf, err = lib.LoadConfig(currentDir, "config")
-	if err != nil {
-		logger.Fatal("unable to load the config. Error: ", err)
-		return
-	}
-
-	var handlerObj = &handlers.HandlerObj{
-		Logger: logger,
-		Config: conf,
-	}
-
-	logger.Info("Attempting to start HTTP Server on port: ", conf.Port)
-	http.HandleFunc("/heartbeat", handlerObj.Heartbeat)
-	http.HandleFunc("/ixrtb", handlerObj.Adserving)
-
-	err = http.ListenAndServe(":"+strconv.Itoa(conf.Port), nil)
+	// 2. Call Listen and Server and provide the ipaddress and port you want
+	// to reach the server on. Adding just the port automatically sets the server
+	// listening on localhost, or 127.0.0.1
+	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
 
 	if err != nil {
-		logger.Error("Server failed starting. Error: ", err)
+		log.Printf("Error starting up server:%", err)
 	}
 }

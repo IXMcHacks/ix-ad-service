@@ -2,32 +2,21 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/eftakhairul/ix-ad-service/lib"
 	"github.com/gorilla/schema"
-	"github.com/sirupsen/logrus"
 )
 
-//Handler context obj
-type HandlerObj struct {
-	Logger *logrus.Logger
-	Config *lib.Config
-}
 type Bid struct {
 	Advertiser    string `json:"Advertiser"`
 	BidPrice      int    `json:"BidPrice"`
 	AdURL         string `json:"AdURL"`
 	AdDescription string `json:"AdDescription"`
-}
-
-type DspResponse struct {
-	Bids []Bid `json:"bids"`
 }
 
 type DspRequest struct {
@@ -42,18 +31,74 @@ type HeartBeatResponse struct {
 	Okay bool `json:"okay"`
 }
 
-func (hObj *HandlerObj) Adserving(w http.ResponseWriter, r *http.Request) {
-	//```10.4.145.10/ixrtb?s=wide&l=cooking&d=working&a=33&code=yes```
-	var decoder = schema.NewDecoder()
-	var dspRequest DspRequest
-	hObj.Logger.Info("Ad request received")
+var dspURLs = []string{
+	"http://127.0.0.1:9000/ixrtb",
+	"http://127.0.0.1:9002/ixrtb",
+}
 
-	err := decoder.Decode(&dspRequest, r.URL.Query())
-	if err != nil {
-		hObj.Logger.Error(fmt.Sprintf("Error in GET parameters : %v", err))
-		HandleSuccess(&w, HeartBeatResponse{Okay: false}, hObj.Logger)
-		return
+// ServeAd is the ad-serving handler. It receives an IXRTB GET request, parses the values in the
+// url fields, builds an IXRTB POST request to DSPs with those same values a the request body, and
+// sends a bid request to DSPs. It then waits for responses, selects the highest bidder and returns
+// the ad belonging to the Bid.
+func RunAuction(w http.ResponseWriter, r *http.Request) {
+
+	log.Printf("Received Ad-request")
+
+	// Parse the IXRTB GET request and put values into a DspRequest struct
+	dspRequest, parseError := parseGETRequest(w, r)
+	if parseError != nil {
+		HandleSuccess(&w, HeartBeatResponse{Okay: false})
 	}
+
+	var topBid Bid
+
+	bidChannel := make(chan Bid)
+	errChannel := make(chan error)
+
+	for _, dspURL := range dspURLs {
+		go func(dspURL string) {
+			bid, err := getDSPBid(dspRequest, dspURL)
+			if err != nil {
+				errChannel <- err
+			} else {
+				bidChannel <- bid
+			}
+		}(dspURL)
+	}
+
+	for responsesReceived := 0; responsesReceived < len(dspURLs); {
+		select {
+		case gotBid := <-bidChannel:
+			if gotBid.BidPrice > topBid.BidPrice {
+				topBid = gotBid
+			}
+			responsesReceived++
+		case gotError := <-errChannel:
+			log.Printf("Error getting request from DSP: %v", gotError)
+			responsesReceived++
+		}
+	}
+
+	HandleSuccess(&w, topBid)
+}
+
+func parseGETRequest(w http.ResponseWriter, r *http.Request) (DspRequest, error) {
+
+	// Initialize DspRequest struct we want to populate
+	var dspRequest DspRequest
+
+	var decoder = schema.NewDecoder()
+	values := r.URL.Query()
+	err := decoder.Decode(&dspRequest, values)
+	if err != nil {
+		log.Printf("Error in GET parameters : %v", err)
+		return dspRequest, err
+	}
+
+	return dspRequest, nil
+}
+
+func getDSPBid(dspRequest DspRequest, dspURL string) (Bid, error) {
 
 	data := url.Values{}
 	data.Set("s", dspRequest.S)
@@ -62,40 +107,34 @@ func (hObj *HandlerObj) Adserving(w http.ResponseWriter, r *http.Request) {
 	data.Set("a", strconv.Itoa(dspRequest.A))
 
 	client := &http.Client{}
-	dspRequestBody, _ := http.NewRequest("POST", hObj.Config.Dspurl, strings.NewReader(data.Encode()))
+
+	dspRequestBody, _ := http.NewRequest("POST", dspURL, strings.NewReader(data.Encode()))
 
 	dspRequestBody.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	dspRequestBody.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
-	hObj.Logger.Info("sending request to dsp: ", hObj.Config.Dspurl)
+	log.Printf("Sending request to dsp:%v", dspURL)
 	response, err := client.Do(dspRequestBody)
+
+	var bid Bid
+
 	if err != nil {
-		hObj.Logger.Error("Error at sending request to DSP: ", err)
-		HandleSuccess(&w, HeartBeatResponse{Okay: false}, hObj.Logger)
-		return
+		log.Printf("Error at sending request to DSP:%v", dspURL)
+		return bid, err
 	}
 
 	defer response.Body.Close()
-
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		hObj.Logger.Error("Error at response body:", err)
-		HandleSuccess(&w, HeartBeatResponse{Okay: false}, hObj.Logger)
-		return
+		log.Printf("Error at response body from DSP:%v", dspURL)
+		return bid, err
 	}
 
-	var bid Bid
 	err = json.Unmarshal(body, &bid)
 	if err != nil {
-		hObj.Logger.Error("Unable to unmarshal the json body:", err)
-		HandleSuccess(&w, HeartBeatResponse{Okay: false}, hObj.Logger)
-		return
+		log.Printf("Unable to unmarshal the json body of DSP:%v", dspURL)
+		return bid, err
 	}
 
-	HandleSuccess(&w, bid, hObj.Logger)
-}
-
-func (hObj *HandlerObj) Heartbeat(w http.ResponseWriter, r *http.Request) {
-	hObj.Logger.Info("/heartbeat request received")
-	HandleSuccess(&w, HeartBeatResponse{Okay: true}, hObj.Logger)
+	return bid, nil
 }
