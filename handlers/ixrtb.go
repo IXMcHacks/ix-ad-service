@@ -28,7 +28,7 @@ type DspRequest struct {
 
 // Public Service Announcement
 type fallbackPSA struct {
-	AdURL string `json:"url"`
+	AdURL string `json:"AdURL"`
 }
 
 var fallbackPSAURL = "https://psanycsquad.podbean.com/mf/web/f9rrjh/maxresdefault.jpg"
