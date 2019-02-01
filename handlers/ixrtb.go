@@ -35,7 +35,7 @@ var dspURLs = []string{
 // the ad belonging to the Bid.
 func RunAuction(w http.ResponseWriter, r *http.Request) {
 
-	log.Printf("Received Ad-request")
+	log.Printf("Received Ad-request!")
 
 	// Parse the IXRTB GET request and put values into a DspRequest struct
 	dspRequest, parseError := parseGETRequest(w, r)
@@ -63,7 +63,15 @@ func RunAuction(w http.ResponseWriter, r *http.Request) {
 		}(dspURL)
 	}
 
+	// The ad with the topBid that will be returned to the website is prepared
 	var topBid Bid
+
+	// Loop continuously and listen for responses from DSPs. The select block waits for
+	// the channels to receive data and runs the code according to which channel it received
+	// data from. As long as not all responses are received, the select block will keep waiting
+	// until one of the cases are triggered.
+	// When a bid is received, we check it against the current highest bid and determine the new
+	// highest bid. This repeats until all expected responses are received.
 	for responsesReceived := 0; responsesReceived < len(dspURLs); {
 		select {
 		case gotBid := <-bidChannel:
@@ -77,26 +85,24 @@ func RunAuction(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Return the topBid in JSON format back to the webpage that sent the initial request.
 	ReturnJSONResponse(w, topBid)
 }
 
-// getDSPBid is an example of how to build and send a POST request to send to a server.
-// It builds the POST request body data using values provided from a DspRequest struct,
-// instantiates a http client, and sends and receives the request using it.
+// getDSPBid sends a bid request to a specific DSP, parses its response, an returns
+// the parsed response as fully useable Bid object that can be processed.
 func getDSPBid(dspRequest DspRequest, dspURL string) (Bid, error) {
 
 	// Specifiy the variable that will hold the final return result.
 	var bid Bid
 
-	// Using the client that was initialized before, invoke the Do method and provide it the
-	// POST request that was built. Notice how they are decoupled, so many clients can make
-	// the same POST request if they are provided with the same built request. This is also where
-	// we receive the response, and assign it to the response variable.
+	// Call the helper sendPOSTRequest method to send the post request
 	response, err := sendPOSTRequest(dspRequest, dspURL)
 	if err != nil {
 		log.Printf("Error at sending request to DSP at: %v", dspURL)
 		return bid, err
 	}
 
+	// Call the helper parseJSONResponse method to parse the response received.
 	return parseJSONResponse(bid, response, dspURL)
 }

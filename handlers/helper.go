@@ -73,6 +73,10 @@ func sendPOSTRequest(dspRequest DspRequest, dspURL string) (*http.Response, erro
 	// 2. Send the POST Request
 	log.Printf("Sending request to DSP at: %v", dspURL)
 
+	// Using the client that was initialized before, invoke the Do method and provide it the
+	// POST request that was built. Notice how they are decoupled, so many clients can make
+	// the same POST request if they are provided with the same built request. This is also where
+	// we receive the response, and assign it to the response variable.
 	return client.Do(dspRequestBody)
 }
 
