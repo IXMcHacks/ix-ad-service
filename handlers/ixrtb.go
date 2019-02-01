@@ -41,7 +41,7 @@ func RunAuction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// We call processAuction to get the topBid whose ad we will return to the browser.
-	topBid := processAuction(dspRequest, dspURLs)
+	topBid := processBids(dspRequest, dspURLs)
 
 	// Return the topBid in JSON format back to the webpage that sent the initial request.
 	ReturnJSONResponse(w, topBid)
@@ -74,7 +74,7 @@ var dspURLs = []string{
 }
 
 // Complete this method
-func processAuction(dspRequest DspRequest, dsps []string) Bid {
+func processBids(dspRequest DspRequest, dsps []string) Bid {
 
 	// Your job is to populate the topBid object with the highest bid received
 	var topBid Bid
