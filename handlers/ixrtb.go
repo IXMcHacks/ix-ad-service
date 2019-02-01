@@ -36,8 +36,9 @@ func RunAuction(w http.ResponseWriter, r *http.Request) {
 
 	// Parse the IXRTB GET request and put values into a DspRequest struct.
 	dspRequest, parseError := parseGETRequest(w, r)
-	if parseError != nil {
+	if parseError != nil || dspRequest.Code != "yes" {
 		returnPSA(w)
+		return
 	}
 
 	// We call processAuction to get the topBid whose ad we will return to the browser.
