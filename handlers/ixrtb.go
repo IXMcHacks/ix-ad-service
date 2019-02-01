@@ -66,16 +66,12 @@ func getBidFromDSP(dspRequest DspRequest, dspURL string) (Bid, error) {
 }
 
 // Public Service Announcement
-type fallbackPSA struct {
-	AdURL string `json:"AdURL"`
-}
-
 var fallbackPSAURL = "https://psanycsquad.podbean.com/mf/web/f9rrjh/maxresdefault.jpg"
 
 // Return a Public Service Announcement back to the browser. This is done usually when
 // either an error occured during an auction, or if the auction process times out.
 func returnPSA(w http.ResponseWriter) {
-	ReturnJSONResponse(w, fallbackPSA{AdURL: fallbackPSAURL})
+	ReturnJSONResponse(w, Bid{AdURL: fallbackPSAURL})
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
