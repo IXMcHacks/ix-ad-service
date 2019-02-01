@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+// Bid is the stuct which will hold the information regarding an advertiser's bid for their
+// ad to be shown on the available ad-placement.
 type Bid struct {
 	Advertiser    string `json:"Advertiser"`
 	BidPrice      int    `json:"BidPrice"`
@@ -12,6 +14,10 @@ type Bid struct {
 	AdDescription string `json:"AdDescription"`
 }
 
+// DspRequest is the IXRTB standard compliant struct that is used to exchange information
+// about a particular ad-placement. It contains the fields "Size", "Likes", "Dislikes", "Age",
+// and "Code", which advertisers use to determine how much they should bit for their ad to fill
+// the placement.
 type DspRequest struct {
 	S    string `schema:"s"`
 	L    string `schema:"l"`
@@ -20,10 +26,14 @@ type DspRequest struct {
 	Code string `schema:"code"`
 }
 
-type HeartBeatResponse struct {
-	Okay bool `json:"okay"`
+// Public Service Announcement
+type fallbackPSA struct {
+	AdURL string `json:"url"`
 }
 
+var fallbackPSAURL = "https://psanycsquad.podbean.com/mf/web/f9rrjh/maxresdefault.jpg"
+
+// dspURLs is the list of urls to send requests to DSPs
 var dspURLs = []string{
 	"http://127.0.0.1:9000/ixrtb",
 	"http://127.0.0.1:9002/ixrtb",
@@ -40,7 +50,7 @@ func RunAuction(w http.ResponseWriter, r *http.Request) {
 	// Parse the IXRTB GET request and put values into a DspRequest struct
 	dspRequest, parseError := parseGETRequest(w, r)
 	if parseError != nil {
-		ReturnJSONResponse(w, HeartBeatResponse{Okay: false})
+		returnPSA(w)
 	}
 
 	// Instantiate a bidChannel and errChannel through which the bid responses will be passed
@@ -54,7 +64,7 @@ func RunAuction(w http.ResponseWriter, r *http.Request) {
 	// contacting another one.
 	for _, dspURL := range dspURLs {
 		go func(dspURL string) {
-			bid, err := getDSPBid(dspRequest, dspURL)
+			bid, err := getBidFromDSP(dspRequest, dspURL)
 			if err != nil {
 				errChannel <- err
 			} else {
@@ -89,9 +99,9 @@ func RunAuction(w http.ResponseWriter, r *http.Request) {
 	ReturnJSONResponse(w, topBid)
 }
 
-// getDSPBid sends a bid request to a specific DSP, parses its response, an returns
+// getBidFromDSP sends a bid request to a specific DSP, parses its response, an returns
 // the parsed response as fully useable Bid object that can be processed.
-func getDSPBid(dspRequest DspRequest, dspURL string) (Bid, error) {
+func getBidFromDSP(dspRequest DspRequest, dspURL string) (Bid, error) {
 
 	// Specifiy the variable that will hold the final return result.
 	var bid Bid
@@ -105,4 +115,10 @@ func getDSPBid(dspRequest DspRequest, dspURL string) (Bid, error) {
 
 	// Call the helper parseJSONResponse method to parse the response received.
 	return parseJSONResponse(bid, response, dspURL)
+}
+
+// Return a Public Service Announcement back to the browser. This is done usually when
+// either an error occured during an auction, or if the auction process times out.
+func returnPSA(w http.ResponseWriter) {
+	ReturnJSONResponse(w, fallbackPSA{AdURL: fallbackPSAURL})
 }
