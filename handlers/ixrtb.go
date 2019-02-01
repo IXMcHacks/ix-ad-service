@@ -41,10 +41,55 @@ func RunAuction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// We call processAuction to get the topBid whose ad we will return to the browser.
-	topBid := processAuction(dspRequest)
+	topBid := processAuction(dspRequest, dspURLs)
 
 	// Return the topBid in JSON format back to the webpage that sent the initial request.
 	ReturnJSONResponse(w, topBid)
+}
+
+// Public Service Announcement
+var fallbackPSAURL = "https://psanycsquad.podbean.com/mf/web/f9rrjh/maxresdefault.jpg"
+
+// Return a Public Service Announcement back to the browser. This is done usually when
+// either an error occured during an auction, or if the auction process times out.
+func returnPSA(w http.ResponseWriter) {
+	ReturnJSONResponse(w, Bid{AdURL: fallbackPSAURL})
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+//										WORKSHOP COMPONENT										//
+//																								//
+//		In this workshop you will be completing the processAuction() method. The method			//
+//		takes in a DspRequest and an array of URLs to reach DSPs with a http request.			//
+//		Your job is to get the top bid from each DSP, compare the bids, and return the  		//
+//		highest bid.																			//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Replace the following URLs with the URLs provided by the workshop organizers.
+var dspURLs = []string{
+	"http://10.65.111.204:8080/ixrtb",
+	"http://10.65.104.107:8080/ixrtb",
+}
+
+// Complete this method
+func processAuction(dspRequest DspRequest, dsps []string) Bid {
+
+	// Your job is to populate the topBid object with the highest bid received
+	var topBid Bid
+
+	// Some key steps to guide you:
+
+	// 1. Get the bid of that DSP by calling:
+	// bid, err := getBidFromDSP(dspRequest, dsps[0]) for example
+
+	// 2. For each bid received, compare it to the highest bid and set the topBid accordingly.
+
+	// 3. HINT: can we find a way to send and receive all requests concurrently using goroutines
+	// and channels?
+
+	return topBid
 }
 
 // getBidFromDSP sends a bid request to a specific DSP, parses its response, an returns
@@ -63,74 +108,4 @@ func getBidFromDSP(dspRequest DspRequest, dspURL string) (Bid, error) {
 
 	// Call the helper parseJSONResponse method to parse the response received.
 	return parseJSONResponse(bid, response, dspURL)
-}
-
-// Public Service Announcement
-var fallbackPSAURL = "https://psanycsquad.podbean.com/mf/web/f9rrjh/maxresdefault.jpg"
-
-// Return a Public Service Announcement back to the browser. This is done usually when
-// either an error occured during an auction, or if the auction process times out.
-func returnPSA(w http.ResponseWriter) {
-	ReturnJSONResponse(w, Bid{AdURL: fallbackPSAURL})
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-//										WORKSHOP COMPONENT										//
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-// dspURLs is the list of urls to send requests to DSPs
-var dspURLs = []string{
-	"http://10.65.111.204:8080/ixrtb",
-	"http://10.65.104.107:8080/ixrtb",
-}
-
-// processAuction is what processes the sending of bid-requests to DSPs, receiving, parsing and
-// validating their responses, and returning the highest bid.
-func processAuction(dspRequest DspRequest) Bid {
-
-	// Instantiate a bidChannel and errChannel through which the bid responses will be passed
-	// through. This allows multiple requests to DSPs to be made concurrently, and their responses
-	// to be processed as they are received.
-	bidChannel := make(chan Bid)
-	errChannel := make(chan error)
-
-	// Loop over all the DSPs provided and send a bid request to each of them. A go routine for
-	// each DSP is necessary to ensure it is not waiting for the last DSP to respond before
-	// contacting another one.
-	for _, dspURL := range dspURLs {
-		go func(dspURL string) {
-			bid, err := getBidFromDSP(dspRequest, dspURL)
-			if err != nil {
-				errChannel <- err
-			} else {
-				bidChannel <- bid
-			}
-		}(dspURL)
-	}
-
-	// The ad with the topBid that will be returned to the website is prepared.
-	var topBid Bid
-
-	// Loop continuously and listen for responses from DSPs. The select block waits for
-	// the channels to receive data and runs the code according to which channel it received
-	// data from. As long as not all responses are received, the select block will keep waiting
-	// until one of the cases are triggered.
-	// When a bid is received, we check it against the current highest bid and determine the new
-	// highest bid. This repeats until all expected responses are received.
-	for responsesReceived := 0; responsesReceived < len(dspURLs); {
-		select {
-		case gotBid := <-bidChannel:
-			if gotBid.BidPrice > topBid.BidPrice {
-				topBid = gotBid
-			}
-			responsesReceived++
-		case gotError := <-errChannel:
-			log.Printf("Error getting request from DSP: %v", gotError)
-			responsesReceived++
-		}
-	}
-
-	return topBid
 }
