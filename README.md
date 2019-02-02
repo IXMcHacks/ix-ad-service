@@ -2,6 +2,7 @@
 A simple demo GO ad-service (web service) for McHacks 2019
 
 
+
 ### Setup Development Environment
 * Setup any directory as your GOPATH
 ```sh
@@ -33,5 +34,13 @@ go install
  $GOPATH/bin/ix-ad-service
 ```
 
-### How to install GOLANG
-[https://golang.org/doc/install]https://golang.org/doc/install
+### Helpful Links
+| Name | Link |
+| ------ | ------ |
+| GO Install | [https://golang.org/doc/install] |
+| Tour of GO | [https://tour.golang.org/welcome/1] |
+
+
+License
+----
+MIT
