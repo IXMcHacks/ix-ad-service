@@ -1,7 +1,7 @@
 # ix-ad-service
 A simple demo GO ad-service (web service) for McHacks 2019
 
-
+_________________
 
 ### Setup Development Environment
 * Setup any directory as your GOPATH
@@ -19,7 +19,7 @@ cd $GOPATH/src/github.com/IXMcHacks
 git clone https://github.com/IXMcHacks/ix-ad-service
 cd ix-ad-service
 ```
-* Download Dependencies
+* Download dependencies
 ```sh
 go get github.com/gorilla/schema
 ```
