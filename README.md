@@ -35,7 +35,7 @@ go install
 ```
 * Run the project
 ```sh
- $GOPATH/bin/ix-ad-service
+ go run main.go
 ```
 
 ### Helpful Links
@@ -43,6 +43,7 @@ go install
 | ------ | ------ |
 | GO Install | [https://golang.org/doc/install](https://golang.org/doc/install) |
 | Tour of GO | [https://tour.golang.org/welcome/1](https://golang.org/doc/install) |
+| ngrok Install | [https://dashboard.ngrok.com/user/signup] |
 
 
 License
