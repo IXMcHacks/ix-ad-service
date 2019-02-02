@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"ixmchacks/ix-ad-service/handlers"
+	"github.com/ixmchacks/ix-ad-service/handlers"
 )
 
 const (
