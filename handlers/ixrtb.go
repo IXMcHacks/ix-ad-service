@@ -44,8 +44,8 @@ func RunAuction(w http.ResponseWriter, r *http.Request) {
 
 	// We call processBids to get the topBid whose ad we will return to the browser.
 	topBid, processingError := processBids(dspRequest, dspURLs)
-	if processingError != nil {
-		log.Printf("Error processing bids, returning PSA.")
+	if processingError != nil || topBid.BidPrice == 0 {
+		log.Printf("Error processing bids or no bids, returning PSA.")
 		returnPSA(w)
 		return
 	}
