@@ -79,8 +79,8 @@ func returnPSA(w http.ResponseWriter) {
 
 // Replace the following URLs with the URLs provided by the workshop organizers.
 var dspURLs = []string{
-	"http://10.65.111.204:8080/ixrtb",
-	"http://10.65.104.107:8080/ixrtb",
+	"http://10.1.5.72:8080/ixrtb",
+	"http://10.1.5.20:8080/ixrtb",
 }
 
 // Complete this method
