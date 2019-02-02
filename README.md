@@ -37,8 +37,8 @@ go install
 ### Helpful Links
 | Name | Link |
 | ------ | ------ |
-| GO Install | [https://golang.org/doc/install] |
-| Tour of GO | [https://tour.golang.org/welcome/1] |
+| GO Install | [https://golang.org/doc/install](https://golang.org/doc/install) |
+| Tour of GO | [https://tour.golang.org/welcome/1](https://golang.org/doc/install) |
 
 
 License
