@@ -38,12 +38,17 @@ go install
  go run main.go
 ```
 
+* On a separate terminal, run ngrok on port 8080:
+```sh
+ ./ngrok http 8080
+```
+
 ### Helpful Links
 | Name | Link |
 | ------ | ------ |
 | GO Install | [https://golang.org/doc/install](https://golang.org/doc/install) |
 | Tour of GO | [https://tour.golang.org/welcome/1](https://golang.org/doc/install) |
-| ngrok Install | [https://dashboard.ngrok.com/user/signup] |
+| ngrok Install | https://dashboard.ngrok.com/user/signup |
 
 
 License
