@@ -19,6 +19,10 @@ cd $GOPATH/src/github.com/IXMcHacks
 git clone https://github.com/IXMcHacks/ix-ad-service
 cd ix-ad-service
 ```
+* Checkout to the workshop branch
+```sh
+git checkout workshop
+```
 * Download dependencies
 ```sh
 go get github.com/gorilla/schema
@@ -31,7 +35,12 @@ go install
 ```
 * Run the project
 ```sh
- $GOPATH/bin/ix-ad-service
+ go run main.go
+```
+
+* On a separate terminal, run ngrok to expose port 8080, where your ad-server is listening:
+```sh
+ ./ngrok http 8080
 ```
 
 ### Helpful Links
@@ -39,6 +48,7 @@ go install
 | ------ | ------ |
 | GO Install | [https://golang.org/doc/install](https://golang.org/doc/install) |
 | Tour of GO | [https://tour.golang.org/welcome/1](https://golang.org/doc/install) |
+| ngrok Install | [https://dashboard.ngrok.com/user/signup](https://dashboard.ngrok.com/user/signup) |
 
 
 License
